@@ -10,7 +10,10 @@ re_acl_name = re.compile("ip access-list extended (?P<acl_name>\S+)$")
 re_service_group_name = re.compile("object-group service (?P<service_group_name>\S+)")
 re_network_group_name = re.compile("object-group network (?P<network_group_name>\S+)")
 re_net_obj = re.compile("\s*(?P<host>host)?\s*?(?P<net_address>(\d+\.){3}\d+)\s*(?P<net_mask>(\d+\.){3}\d+)?")
-
+re_acl_entry = re.compile(
+      '\s*(?P<action>(permit)|(deny))'
+      '\s*(?P<service>(object-group\s*\S+)|(\w{2,6}))'
+      '.*')
 if not in_file:
     exit("please specify a path to the file containing access-lists and object-groups..")
 
@@ -24,7 +27,7 @@ with open(in_file) as INPUT_FILE:
         if re_acl_name.match(line):
             acl_name = re_acl_name.match(line).group("acl_name") 
             print("acl name: %s" % acl_name)
-            acls[acl_name] = {}
+            acls[acl_name] = [] 
             level = "acl"
         elif re_service_group_name.match(line):
             service_group_name = re_service_group_name.match(line).group("service_group_name")
@@ -39,7 +42,10 @@ with open(in_file) as INPUT_FILE:
         elif level == 'network_group':
             if re_net_obj.match(line):
                 network_groups[network_group_name].append(re_net_obj.match(line).group("net_address"))
-
+        elif level == 'acl':
+            if re_acl_entry.match(line):
+                print("acl entry: %s" % line)
+                acls[acl_name].append(re_acl_entry.match(line).groupdict())
 print(acls)
 print(service_groups)
 print(network_groups)
